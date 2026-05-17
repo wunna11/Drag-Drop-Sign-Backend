@@ -1,0 +1,8 @@
+create embed request url
+- document
+- envelope
+- auditEvent
+- embedSession
+
+
+envelope -> document

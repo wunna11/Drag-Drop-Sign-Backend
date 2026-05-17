@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: esign
+      POSTGRES_PASSWORD: esign
+      POSTGRES_DB: esign
+    ports:
+      - "5432:5432"
+    volumes:
+      - esign_pg:/var/lib/postgresql/data
+
+volumes:
+  esign_pg:

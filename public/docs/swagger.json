@@ -1,0 +1,241 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Drag & Drop Sign API",
+    "version": "1.0.0",
+    "description": "API Reference for Drag & Drop Sign, featuring creation of request sessions, generation of sign links, document tracking, pagination, and download endpoints."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Your organization API key (e.g. dev_live_replace_me)"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/embed/sessions/create-request-url": {
+      "post": {
+        "summary": "Create Request Session Link",
+        "description": "Generates a dynamic hosted workflow sending URL to upload and configure a document.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "Commercial Agreement"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Terms and conditions of agreement."
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "signers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request link created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "documentId": {
+                      "type": "string",
+                      "example": "cmp9dvhzd000oi5cnjy3yla19"
+                    },
+                    "sendUrl": {
+                      "type": "string",
+                      "example": "http://localhost:3000/embed/request?token=..."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/document/getEmbeddedSignLink": {
+      "get": {
+        "summary": "Get Embedded Signing Link",
+        "description": "Generates an embedded signing link with recipient validation.",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "cmp9dvhzd000oi5cnjy3yla19"
+          },
+          {
+            "name": "signerEmail",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "wana11391@gmail.com"
+          },
+          {
+            "name": "redirectUrl",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "https://www.syncfusion.com/"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signing link generated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "signLink": {
+                      "type": "string",
+                      "example": "http://localhost:3000/embed/sign?token=..."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/document/properties": {
+      "get": {
+        "summary": "Get Document Properties",
+        "description": "Retrieves the properties and full metadata detail of a document / envelope.",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "cmp9dvhzd000oi5cnjy3yla19"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document details resolved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/document/list": {
+      "get": {
+        "summary": "List Documents",
+        "description": "Lists documents under the authenticated organization with pagination.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pagesize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/document/download": {
+      "get": {
+        "summary": "Download Document PDF",
+        "description": "Downloads the completed signed PDF or original PDF based on progress.",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "cmp9dvhzd000oi5cnjy3yla19"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF Document file.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

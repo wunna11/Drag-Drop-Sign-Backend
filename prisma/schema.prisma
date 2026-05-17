@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Top-level tenant (your customer’s account).
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  apiKeys          ApiKey[]
+  documents        Document[]
+  envelopes        Envelope[]
+}
+
+/// Server-to-server auth for your API (hash stored, never plaintext).
+model ApiKey {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String?
+  keyPrefix      String
+  keyHash        String
+  createdAt      DateTime @default(now())
+  lastUsedAt     DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([keyPrefix])
+}
+
+/// Uploaded file metadata (blob in FILE_STORAGE_DIR or S3 later).
+model Document {
+  id             String   @id @default(cuid())
+  organizationId String
+  originalName   String
+  storageKey     String   @unique
+  mimeType       String
+  byteSize       Int
+  pageCount      Int?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  envelopes    Envelope[]
+
+  @@index([organizationId])
+}
+
+enum EnvelopeStatus {
+  DRAFT
+  SENT
+  COMPLETED
+  DECLINED
+  VOIDED
+}
+
+/// Signing request / “envelope”.
+model Envelope {
+  id               String         @id @default(cuid())
+  organizationId   String
+  documentId       String?
+  status           EnvelopeStatus @default(DRAFT)
+  title            String?
+  message          String?
+  /// Latest PDF with all signatures applied so far (under FILE_STORAGE_DIR).
+  signedStorageKey String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  document       Document?       @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  recipients     Recipient[]
+  fields         EnvelopeField[]
+  embedSessions  EmbedSession[]
+  auditEvents    AuditEvent[]
+
+  @@index([organizationId])
+  @@index([documentId])
+}
+
+enum RecipientRole {
+  SIGNER
+  APPROVER
+  CC
+}
+
+model Recipient {
+  id         String        @id @default(cuid())
+  envelopeId String
+  email      String
+  name       String?
+  role       RecipientRole @default(SIGNER)
+  routingOrder Int       @default(1)
+  signedAt     DateTime?
+  createdAt  DateTime      @default(now())
+
+  envelope      Envelope       @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  fields        EnvelopeField[]
+  embedSessions EmbedSession[]
+
+  @@index([envelopeId])
+}
+
+/// Advanced signer fields (geometry + type + assignee). Values filled at signing time (separate table later).
+model EnvelopeField {
+  id           String   @id @default(cuid())
+  envelopeId   String
+  recipientId  String
+  type         String
+  pageIndex    Int
+  /// Normalized rect: { x, y, width, height } in PDF user space units (0,0 bottom-left of page).
+  rectJson     String
+  required     Boolean  @default(true)
+  optionsJson  String?
+  readOnly     Boolean  @default(false)
+  tabOrder     Int      @default(0)
+  value        String?
+  filledAt     DateTime?
+  createdAt    DateTime @default(now())
+
+  envelope  Envelope  @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  recipient Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([envelopeId])
+  @@index([recipientId])
+}
+
+enum EmbedSessionType {
+  REQUESTING
+  SIGNING
+}
+
+model EmbedSession {
+  id          String            @id @default(cuid())
+  envelopeId  String
+  recipientId String?
+  type        EmbedSessionType
+  tokenHash   String            @unique
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  allowedOrigins String            @default("[]")
+  createdAt   DateTime          @default(now())
+
+  envelope  Envelope   @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  recipient Recipient? @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([envelopeId])
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  envelopeId String
+  action     String
+  metaJson   String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  envelope Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+
+  @@index([envelopeId])
+}

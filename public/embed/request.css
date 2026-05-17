@@ -1,0 +1,476 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  background: #f4f4f5;
+  color: #18181b;
+}
+
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+}
+
+.toolbar label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.toolbar select,
+.toolbar button {
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #d4d4d8;
+  font-size: 0.875rem;
+}
+
+.toolbar button.primary {
+  background: #18181b;
+  color: #fff;
+  border-color: #18181b;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 0.8125rem;
+  color: #71717a;
+  margin-bottom: 1rem;
+}
+
+#pages {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-wrap {
+  position: relative;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+  display: inline-block;
+}
+
+.page-wrap canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+.field-box {
+  position: absolute;
+  border: 2px dashed;
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 2px 4px;
+  pointer-events: auto;
+  cursor: move;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.field-box .rm {
+  cursor: pointer;
+  font-weight: bold;
+  padding: 0 4px;
+}
+
+.field-list {
+  margin-top: 1rem;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.done {
+  background: #ecfdf5;
+  color: #047857;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.colors-0 {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, .12);
+  color: #1d4ed8;
+}
+
+.colors-1 {
+  border-color: #059669;
+  background: rgba(5, 150, 105, .12);
+  color: #047857;
+}
+
+.colors-2 {
+  border-color: #d97706;
+  background: rgba(217, 119, 6, .12);
+  color: #b45309;
+}
+
+.colors-3 {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, .12);
+  color: #6d28d9;
+}
+
+/* Step 1 Styles */
+.step {
+  display: none;
+}
+
+.step.active {
+  display: block;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.upload-box {
+  border: 2px dashed #d4d4d8;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.upload-box:hover {
+  background: #f4f4f5;
+  border-color: #a1a1aa;
+}
+
+.upload-box input[type="file"] {
+  display: none;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #d4d4d8;
+  font-size: 0.875rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #f4f4f5;
+}
+
+.btn.primary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.btn.primary:hover {
+  background: #1d4ed8;
+}
+
+.file-list {
+  margin-top: 1rem;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f4f4f5;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.recipients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.recipient-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.recipient-row input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d4d4d8;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.recipient-row .rm {
+  cursor: pointer;
+  color: #ef4444;
+  font-weight: bold;
+  padding: 0.25rem 0.5rem;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Step 2 Drag and Drop UI */
+.step2-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #f4f4f5;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  font-family: system-ui, sans-serif;
+}
+
+.step2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #e4e4e7;
+  padding: 0 1.5rem;
+}
+
+.step2-header .doc-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.step2-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.step2-sidebar-left {
+  width: 250px;
+  background: #fff;
+  border-right: 1px solid #e4e4e7;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
+}
+
+.signer-select-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.signer-select-wrap label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #71717a;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.signer-select-wrap select {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #d4d4d8;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.tool-btn {
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tool-btn:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tool-btn:active {
+  cursor: grabbing;
+}
+
+.step2-center {
+  flex: 1;
+  overflow: auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step2-sidebar-right {
+  width: 300px;
+  background: #fff;
+  border-left: 1px solid #e4e4e7;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.step2-sidebar-right h3 {
+  margin: 0 0 1.5rem;
+  font-size: 1rem;
+}
+
+.prop-group {
+  margin-bottom: 1rem;
+}
+
+.prop-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #71717a;
+  margin-bottom: 0.25rem;
+}
+
+.prop-group input,
+.prop-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 4px;
+}
+
+.empty-props {
+  color: #a1a1aa;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.field-box {
+  position: absolute;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  font-size: 12px;
+  padding: 4px;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.field-box:active {
+  cursor: grabbing;
+}
+
+.field-box.selected {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  z-index: 10;
+}
+
+/* A small dot in bottom right for resize - optional if we add resizing later */
+.resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  cursor: se-resize;
+  display: none;
+}
+
+.field-box.selected .resize-handle {
+  display: block;
+}
+
+/* Overrides for ghost field while dragging */
+.ghost-field {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px dashed #a1a1aa;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 2px;
+  white-space: nowrap;
+  padding: 4px;
+}
+
+.field-delete-btn {
+  width: 100%;
+  margin-top: 2rem;
+  padding: 0.5rem;
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.field-delete-btn:hover {
+  background: #fee2e2;
+}

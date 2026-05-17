@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>API Reference - Drag & Drop Sign</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #141b2d;
+      --border-color: #232e4c;
+      --text-color: #e2e8f0;
+      --primary-color: #3b82f6;
+      --success-color: #10b981;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-color);
+      font-family: 'Outfit', sans-serif !important;
+      color: var(--text-color);
+    }
+
+    /* Custom gorgeous header banner */
+    .premium-header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+      border-bottom: 1px solid var(--border-color);
+      padding: 2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .premium-header::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .header-logo {
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-logo span {
+      background: linear-gradient(to right, #3b82f6, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-badge {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #93c5fd;
+    }
+
+    /* Override Swagger UI Styles to gorgeous dark mode */
+    .swagger-ui {
+      background-color: var(--bg-color) !important;
+      font-family: 'Outfit', sans-serif !important;
+    }
+
+    .swagger-ui .info {
+      margin: 40px 0 !important;
+    }
+
+    .swagger-ui .info .title {
+      color: #fff !important;
+      font-size: 2.2rem !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.02em;
+    }
+
+    .swagger-ui .info p, .swagger-ui .info li, .swagger-ui .info table {
+      color: #94a3b8 !important;
+      font-size: 1.05rem !important;
+      line-height: 1.6 !important;
+    }
+
+    .swagger-ui .scheme-container {
+      background: var(--card-bg) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+      padding: 25px !important;
+      margin: 30px 0 !important;
+    }
+
+    .swagger-ui select, .swagger-ui input[type=text] {
+      background: #1e293b !important;
+      border: 1px solid var(--border-color) !important;
+      color: #fff !important;
+      border-radius: 6px !important;
+      padding: 8px 12px !important;
+    }
+
+    .swagger-ui .btn.authorize {
+      background: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      color: #fff !important;
+      border-radius: 8px !important;
+      font-weight: 600 !important;
+      transition: all 0.2s;
+    }
+
+    .swagger-ui .btn.authorize svg {
+      fill: #fff !important;
+    }
+
+    .swagger-ui .opblock {
+      background: var(--card-bg) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 10px !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+      margin-bottom: 16px !important;
+    }
+
+    .swagger-ui .opblock .opblock-summary {
+      border-bottom: 1px solid transparent !important;
+      padding: 12px 20px !important;
+    }
+
+    .swagger-ui .opblock.opblock-post {
+      border-color: rgba(59, 130, 246, 0.3) !important;
+    }
+    .swagger-ui .opblock.opblock-post .opblock-summary-method {
+      background: var(--primary-color) !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui .opblock.opblock-get {
+      border-color: rgba(16, 185, 129, 0.3) !important;
+    }
+    .swagger-ui .opblock.opblock-get .opblock-summary-method {
+      background: var(--success-color) !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui .opblock .opblock-summary-path {
+      color: #fff !important;
+      font-weight: 600 !important;
+      font-size: 1.05rem !important;
+    }
+
+    .swagger-ui .opblock .opblock-summary-description {
+      color: #94a3b8 !important;
+    }
+
+    .swagger-ui .opblock-description-wrapper p, 
+    .swagger-ui .opblock-section-header h4,
+    .swagger-ui .tabli button {
+      color: #e2e8f0 !important;
+    }
+
+    .swagger-ui .parameters-col_name {
+      color: #fff !important;
+      font-weight: 600 !important;
+    }
+
+    .swagger-ui .parameter__name.required:after {
+      color: #ef4444 !important;
+    }
+
+    .swagger-ui .parameter__type, .swagger-ui .parameter__in {
+      color: #94a3b8 !important;
+    }
+
+    .swagger-ui .opblock-body pre.microlight {
+      background: #0f172a !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 8px !important;
+      color: #38bdf8 !important;
+    }
+
+    .swagger-ui .response-col_status {
+      color: #fff !important;
+      font-weight: 600 !important;
+    }
+
+    .swagger-ui table.headers td {
+      color: #94a3b8 !important;
+    }
+
+    .swagger-ui .dialog-ux .modal-ux {
+      background: var(--card-bg) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+    }
+
+    .swagger-ui .dialog-ux .modal-ux-header h3 {
+      color: #fff !important;
+    }
+
+    .swagger-ui .dialog-ux .modal-ux-content h4 {
+      color: #cbd5e1 !important;
+    }
+
+    .swagger-ui .dialog-ux .modal-ux-content p {
+      color: #94a3b8 !important;
+    }
+
+    .swagger-ui .btn {
+      border-radius: 6px !important;
+      font-weight: 500 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="premium-header">
+    <div class="header-logo">
+      <span>Drag & Drop Sign</span> API Reference
+    </div>
+    <div class="header-badge">
+      Production API v1.0.0
+    </div>
+  </header>
+
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      // Begin Swagger UI call
+      const ui = SwaggerUIBundle({
+        url: "/docs/swagger.json",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "BaseLayout",
+        configs: {
+          preauthorizeApiKey: {
+            authDefinitionKey: "ApiKeyAuth",
+            apiKeyValue: "dev_live_replace_me"
+          }
+        }
+      });
+      window.ui = ui;
+    };
+  </script>
+</body>
+</html>
