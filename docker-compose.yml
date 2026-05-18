@@ -1,6 +1,9 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: drag_drop_sign_db
     environment:
       POSTGRES_USER: esign
       POSTGRES_PASSWORD: esign
@@ -9,6 +12,27 @@ services:
       - "5432:5432"
     volumes:
       - esign_pg:/var/lib/postgresql/data
+    restart: always
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drag_drop_sign_app
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgresql://esign:esign@postgres:5432/esign?schema=public
+      - PORT=3000
+      - FILE_STORAGE_DIR=./uploads
+      - SEED_ORG_NAME=Demo Org
+      - SEED_API_KEY_PLAINTEXT=dev_live_replace_me
+      - EMBED_BASE_URL=http://localhost:3001/embed
+    volumes:
+      - ./uploads:/usr/src/app/uploads
+    depends_on:
+      - postgres
+    restart: always
 
 volumes:
   esign_pg:

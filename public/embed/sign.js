@@ -7,6 +7,7 @@ const token = params.get("token");
 const app = document.getElementById("app");
 
 let signerName = "";
+let signerEmail = "";
 let activeSignatureField = null;
 let signatureMode = "type";
 let selectedTypedIndex = 0;
@@ -69,9 +70,27 @@ function addOverlay(wrap, f, editable) {
       '<div class="signature-preview" data-signature-preview="' +
       esc(f.id) +
       '"></div>';
-    overlay.querySelector("[data-signature-field]").onclick = function () {
-      openSignatureModal(f.id);
-    };
+    const trigger = overlay.querySelector("[data-signature-field]");
+    const preview = overlay.querySelector("[data-signature-preview]");
+    if (trigger) {
+      trigger.onclick = function () {
+        const savedSignature = localStorage.getItem("saved_signature_" + signerEmail);
+        const input = overlay.querySelector('[data-field-id="' + CSS.escape(f.id) + '"]');
+        if (savedSignature && (!input || !input.value)) {
+          setSignatureFieldValue(f.id, savedSignature);
+        } else {
+          openSignatureModal(f.id);
+        }
+      };
+    }
+    if (preview) {
+      preview.onclick = function () {
+        const input = overlay.querySelector('[data-field-id="' + CSS.escape(f.id) + '"]');
+        if (input && input.value) {
+          openSignatureModal(f.id);
+        }
+      };
+    }
   } else if (editable) {
     overlay.innerHTML =
       "<label>" +
@@ -358,7 +377,16 @@ function saveSignatureFromModal() {
     text: name,
     dataUrl: dataUrl,
   });
-  const ids = document.getElementById("apply-everywhere").checked
+
+  const isApplyEverywhere = document.getElementById("apply-everywhere").checked;
+  try {
+    localStorage.setItem("saved_signature_" + signerEmail, value);
+    localStorage.setItem("apply_everywhere_" + signerEmail, isApplyEverywhere ? "true" : "false");
+  } catch (e) {
+    console.error("Could not save signature to localStorage", e);
+  }
+
+  const ids = isApplyEverywhere
     ? Array.from(document.querySelectorAll(".signature-trigger")).map(function (btn) {
         return btn.dataset.signatureField;
       })
@@ -373,12 +401,22 @@ function saveSignatureFromModal() {
 function setSignatureFieldValue(id, value) {
   const input = document.querySelector('[data-field-id="' + CSS.escape(id) + '"]');
   const preview = document.querySelector('[data-signature-preview="' + CSS.escape(id) + '"]');
+  const trigger = document.querySelector('[data-signature-field="' + CSS.escape(id) + '"]');
   if (input) input.value = value;
   if (preview) {
     const parsed = parseSignatureValue(value);
     preview.innerHTML = parsed?.dataUrl
       ? '<img src="' + esc(parsed.dataUrl) + '" alt="Signature preview" />'
       : esc(signatureLabel(value));
+    if (parsed) {
+      if (trigger) trigger.style.display = "none";
+      preview.style.cursor = "pointer";
+      preview.title = "Click to change signature";
+    } else {
+      if (trigger) trigger.style.display = "block";
+      preview.style.cursor = "default";
+      preview.removeAttribute("title");
+    }
   }
 }
 
@@ -398,6 +436,7 @@ async function load() {
   }
 
   signerName = data.recipient?.name || data.recipient?.email || "";
+  signerEmail = data.recipient?.email || "";
 
   app.innerHTML =
     "<header><h1>" +
@@ -445,6 +484,22 @@ async function load() {
       .forEach(function (f) {
         addOverlay(wrap, f, true);
       });
+  }
+
+  // Auto sign if apply_everywhere was checked previously
+  try {
+    const savedSignature = localStorage.getItem("saved_signature_" + signerEmail);
+    const applyEverywhere = localStorage.getItem("apply_everywhere_" + signerEmail) === "true";
+    if (savedSignature && applyEverywhere) {
+      const sigFields = editableFields.filter(function (f) {
+        return f.type === "signature";
+      });
+      sigFields.forEach(function (f) {
+        setSignatureFieldValue(f.id, savedSignature);
+      });
+    }
+  } catch (e) {
+    console.error("Could not auto-apply saved signature", e);
   }
 
   document.getElementById("complete").onclick = async function () {

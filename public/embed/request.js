@@ -259,14 +259,24 @@ function renderStep2() {
   step2.innerHTML = `
     <div class="step2-layout">
       <div class="step2-header">
-        <button class="btn" id="back-to-step1"> < Configure fields (Step 2/2)</button>
+        <button class="btn" id="back-to-step1">
+          <span class="back-text-long">&lt; Configure fields (Step 2/2)</span>
+          <span class="back-text-short">&lt; Back</span>
+        </button>
         <div class="doc-title">${esc(title)}</div>
         <div class="header-actions">
           <button type="button" class="btn primary" id="finish">Send</button>
         </div>
       </div>
       <div class="step2-body">
-        <div class="step2-sidebar-left">
+        <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+        <button type="button" class="mobile-toggle-btn" id="toggle-left-sidebar">
+          <span>📋</span> Fields
+        </button>
+        <button type="button" class="mobile-toggle-btn" id="toggle-right-sidebar">
+          <span>⚙️</span> Settings
+        </button>
+        <div class="step2-sidebar-left" id="sidebar-left">
           <div class="signer-select-wrap">
             <label>Assigned to</label>
             <select id="recipient">${opts}</select>
@@ -301,6 +311,41 @@ function renderStep2() {
     step2.classList.remove("active");
     step1.classList.add("active");
   };
+
+  // Drawer toggle handlers
+  const leftSidebar = document.getElementById("sidebar-left");
+  const rightSidebar = document.getElementById("properties-panel");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  const toggleLeft = document.getElementById("toggle-left-sidebar");
+  const toggleRight = document.getElementById("toggle-right-sidebar");
+
+  function closeAllDrawers() {
+    if (leftSidebar) leftSidebar.classList.remove("open");
+    if (rightSidebar) rightSidebar.classList.remove("open");
+    if (backdrop) backdrop.classList.remove("open");
+  }
+
+  if (toggleLeft) {
+    toggleLeft.onclick = function (e) {
+      e.stopPropagation();
+      if (rightSidebar) rightSidebar.classList.remove("open");
+      if (leftSidebar) leftSidebar.classList.toggle("open");
+      if (backdrop) backdrop.classList.toggle("open", leftSidebar.classList.contains("open"));
+    };
+  }
+
+  if (toggleRight) {
+    toggleRight.onclick = function (e) {
+      e.stopPropagation();
+      if (leftSidebar) leftSidebar.classList.remove("open");
+      if (rightSidebar) rightSidebar.classList.toggle("open");
+      if (backdrop) backdrop.classList.toggle("open", rightSidebar.classList.contains("open"));
+    };
+  }
+
+  if (backdrop) {
+    backdrop.onclick = closeAllDrawers;
+  }
 
   // Bind tools
   document.querySelectorAll(".tool-btn").forEach(btn => {
@@ -408,6 +453,19 @@ function selectField(f) {
   selectedField = f;
   renderAllPages();
   renderPropertiesPanel();
+
+  // Auto-open settings panel on mobile/tablet if a field is selected
+  const rightSidebar = document.getElementById("properties-panel");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  if (rightSidebar && window.innerWidth < 1024) {
+    if (f) {
+      rightSidebar.classList.add("open");
+      if (backdrop) backdrop.classList.add("open");
+    } else {
+      rightSidebar.classList.remove("open");
+      if (backdrop) backdrop.classList.remove("open");
+    }
+  }
 }
 
 function renderPropertiesPanel() {

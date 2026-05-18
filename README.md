@@ -227,3 +227,28 @@ node prisma/seed.mjs
 #### What does this do?
 1. **`npx prisma db push --force-reset`**: Drops all existing tables in your local `dev.db` SQLite database and rebuilds them fresh according to the current schema (`schema.prisma`). This is the clean developer way to perform a database refresh without running legacy raw SQL push scripts.
 2. **`node prisma/seed.mjs`**: Re-populates the freshly reset database with default seed records (Organization `Demo Org` and your API Key `dev_live_replace_me`).
+
+---
+
+## 🐳 Docker Deployment
+
+The project is fully containerized and pre-configured to run with a **PostgreSQL** database out of the box using **Docker Compose**.
+
+### 1. Build and Run Entire Stack
+To orchestrate both the Postgres database container and the TypeScript Express app container with one single command, simply run:
+
+```bash
+docker-compose up --build
+```
+
+### 2. What this does automatically:
+1. **DB Initialization**: Boots up a `postgres:16-alpine` database service, persisting all PostgreSQL data in a named docker volume (`esign_pg`).
+2. **Multi-Stage Build**: Compiles our TypeScript code in a build stage, and then copies only the compiled output (`dist/`) and minimal production dependencies into the runner stage, keeping the container image small and secure.
+3. **Database Health Sync**: The container entrypoint (`docker-entrypoint.sh`) automatically waits for PostgreSQL to accept connections, then executes `npx prisma db push` to verify and align all tables with the current Prisma schema definitions.
+4. **Credential Seeding**: Runs `node prisma/seed.mjs` to auto-populate the database with the default organization (`Demo Org`) and API Key (`dev_live_replace_me`).
+5. **Persistent Uploads**: Maps the `./uploads` folder as a local volume mount, meaning all uploaded contracts and completed signed PDFs are safely written on your local disk and **never lost** when restarting container services.
+
+### 3. Stop Container services
+```bash
+docker-compose down
+```
