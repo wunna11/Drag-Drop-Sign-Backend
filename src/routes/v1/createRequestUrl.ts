@@ -124,11 +124,11 @@ createRequestUrlRouter.post(
         for (const f of files) fs.rmSync(f.path, { force: true });
       }
 
-      // Original display name: use first file's name (or "document.pdf")
+      // Original display name: use original filename if 1 file, else JSON array of filenames
       const originalName =
         files.length === 1
           ? files[0].originalname
-          : `${(req.body as Record<string, string> | undefined)?.Title || "document"}.pdf`;
+          : JSON.stringify(files.map((f) => f.originalname));
 
       doc = await prisma.document.create({
         data: {

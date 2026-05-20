@@ -38,7 +38,7 @@ async function loadSession() {
   session = data;
   localRecipients = [...(session.recipients || [])];
   localDocument = session.document;
-  
+
   session.recipients.forEach(function (r, i) {
     recipientColors[r.id] = i;
   });
@@ -86,13 +86,13 @@ function renderStep1() {
   renderRecipientsList();
 }
 
-window.updateRecipientName = function(idx, val) {
+window.updateRecipientName = function (idx, val) {
   localRecipients[idx].name = val;
 }
-window.updateRecipientEmail = function(idx, val) {
+window.updateRecipientEmail = function (idx, val) {
   localRecipients[idx].email = val;
 }
-window.removeRecipient = function(idx) {
+window.removeRecipient = function (idx) {
   localRecipients.splice(idx, 1);
   renderRecipientsList();
 }
@@ -104,20 +104,20 @@ function setupStep1Events() {
   const nextBtn = document.getElementById("next-btn");
 
   browseBtn.onclick = () => fileInput.click();
-  uploadBox.onclick = (e) => { if(e.target !== browseBtn && e.target !== fileInput && !e.target.closest('.rm-file')) fileInput.click() };
-  
+  uploadBox.onclick = (e) => { if (e.target !== browseBtn && e.target !== fileInput && !e.target.closest('.rm-file')) fileInput.click() };
+
   fileInput.onchange = async () => {
     if (!fileInput.files.length) return;
     for (let i = 0; i < fileInput.files.length; i++) {
       pendingFiles.push(fileInput.files[i]);
     }
-    
+
     // Clear the input so the same files can be selected again if needed
     fileInput.value = "";
     renderFileList();
   };
 
-  window.removePendingFile = function(idx) {
+  window.removePendingFile = function (idx) {
     pendingFiles.splice(idx, 1);
     renderFileList();
   }
@@ -142,7 +142,7 @@ function setupStep1Events() {
         for (let i = 0; i < pendingFiles.length; i++) {
           fd.append("Files", pendingFiles[i]);
         }
-        
+
         const uploadRes = await fetch("/embed/api/request/upload?token=" + encodeURIComponent(token), {
           method: "POST",
           body: fd
@@ -151,7 +151,7 @@ function setupStep1Events() {
         if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed");
         localDocument = uploadData.document;
         // clear pending after successful upload
-        pendingFiles = []; 
+        pendingFiles = [];
       }
 
       nextBtn.textContent = "Saving recipients...";
@@ -165,9 +165,11 @@ function setupStep1Events() {
         })
       });
       if (!res.ok) throw new Error("Failed to save recipients");
-      
+
       // Reload session and go to step 2
       await loadSession();
+      nextBtn.textContent = "Save and proceed";
+      nextBtn.disabled = false;
       renderStep2();
     } catch (e) {
       alert(e.message);
@@ -184,7 +186,7 @@ function renderFileList() {
     list.innerHTML = "";
     return;
   }
-  
+
   let html = "";
 
   if (pendingFiles.length > 0) {
@@ -200,21 +202,66 @@ function renderFileList() {
       </div>
     `).join("");
   } else if (localDocument) {
-    html = `
+    // originalName may be a JSON array string when multiple files were uploaded
+    let fileNames = [];
+    try {
+      const parsed = JSON.parse(localDocument.originalName);
+      if (Array.isArray(parsed)) {
+        fileNames = parsed;
+      } else {
+        fileNames = [localDocument.originalName];
+      }
+    } catch (e) {
+      fileNames = [localDocument.originalName];
+    }
+    html = fileNames.map((name, idx) => `
       <div class="file-item" style="margin-bottom: 0.5rem;">
         <div>
-          <strong>${esc(localDocument.originalName)}</strong>
+          <strong>${esc(name)}</strong>
           <div class="hint" style="margin:0">Uploaded Successfully</div>
         </div>
-        <div>
-          <!-- Read only indicator since it's already uploaded, or provide replace option -->
-          <span style="font-size: 0.8rem; color: #71717a;">Stored Document</span>
+        <div> 
+          <button class="btn rm-file" type="button" onclick="window.removeStoredFile(${idx})" style="color: #ef4444; border-color: #ef4444;">Remove</button>
         </div>
       </div>
-    `;
+    `).join("");
   }
-  
+
   list.innerHTML = html;
+}
+
+window.removeStoredFile = function (idx) {
+  if (!localDocument) return;
+  // Parse current filenames
+  let fileNames = [];
+  try {
+    const parsed = JSON.parse(localDocument.originalName);
+    if (Array.isArray(parsed)) {
+      fileNames = parsed;
+    } else {
+      fileNames = [localDocument.originalName];
+    }
+  } catch (e) {
+    fileNames = [localDocument.originalName];
+  }
+  // Remove the selected file
+  fileNames.splice(idx, 1);
+  if (fileNames.length === 0) {
+    // No files left, clear the document entirely
+    localDocument = null;
+  } else {
+    // Update the stored document's originalName to the remaining files
+    localDocument.originalName = JSON.stringify(fileNames);
+  }
+  placed = [];
+  renderFileList();
+};
+
+window.removeStoredDocument = function () {
+  // Legacy fallback – clears everything
+  localDocument = null;
+  placed = [];
+  renderFileList();
 }
 
 function renderRecipientsList() {
@@ -226,7 +273,7 @@ function renderRecipientsList() {
   }
   list.innerHTML = localRecipients.map((r, i) => `
     <div class="recipient-row">
-      <div style="font-weight:bold; width:20px;">${i+1}</div>
+      <div style="font-weight:bold; width:20px;">${i + 1}</div>
       <input type="text" value="${esc(r.name || '')}" disabled style="background-color: #f4f4f5; cursor: not-allowed;" />
       <input type="email" value="${esc(r.email || '')}" disabled style="background-color: #f4f4f5; cursor: not-allowed;" />
     </div>
@@ -245,7 +292,7 @@ let ghostEl = null;
 function renderStep2() {
   const step1 = document.getElementById("step1");
   const step2 = document.getElementById("step2");
-  if(step1) step1.classList.remove("active");
+  if (step1) step1.classList.remove("active");
   step2.classList.add("active");
 
   const opts = session.recipients
@@ -310,6 +357,13 @@ function renderStep2() {
   document.getElementById("back-to-step1").onclick = () => {
     step2.classList.remove("active");
     step1.classList.add("active");
+    const nextBtn = document.getElementById("next-btn");
+    if (nextBtn) {
+      nextBtn.textContent = "Save and proceed";
+      nextBtn.disabled = false;
+    }
+    renderFileList();
+    renderRecipientsList();
   };
 
   // Drawer toggle handlers
@@ -393,16 +447,16 @@ function onPointerMove(e) {
     const rect = draggingField.wrapRect || wrap.getBoundingClientRect();
     const dx = e.clientX - pointerStartX;
     const dy = e.clientY - pointerStartY;
-    
+
     let nx = fieldStartX + (dx / rect.width);
     let ny = fieldStartY + (dy / rect.height);
-    
+
     nx = Math.max(0, Math.min(1 - DEFAULT_W, nx));
     ny = Math.max(0, Math.min(1 - DEFAULT_H, ny));
-    
+
     draggingField.f.rect.x = nx;
     draggingField.f.rect.y = ny;
-    
+
     // Smooth transform-based repositioning during drag (hardware accelerated, no layout reflows)
     const clampedDx = (nx - fieldStartX) * rect.width;
     const clampedDy = (ny - fieldStartY) * rect.height;
@@ -418,21 +472,21 @@ function onPointerUp(e) {
     for (const page of pages) {
       const rect = page.getBoundingClientRect();
       if (e.clientX >= rect.left && e.clientX <= rect.right &&
-          e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        e.clientY >= rect.top && e.clientY <= rect.bottom) {
         targetPage = page;
         targetRect = rect;
         break;
       }
     }
-    
+
     if (targetPage) {
       const pIdx = parseInt(targetPage.dataset.page);
       let x = (e.clientX - targetRect.left) / targetRect.width;
       let y = (e.clientY - targetRect.top) / targetRect.height;
-      
+
       const recipientId = document.getElementById("recipient").value;
       const r = session.recipients.find(x => x.id === recipientId);
-      
+
       const newField = {
         id: "new_" + Date.now(),
         recipientId: recipientId,
@@ -450,12 +504,12 @@ function onPointerUp(e) {
       renderAllPages();
       selectField(newField);
     }
-    
+
     if (ghostEl) ghostEl.remove();
     ghostEl = null;
     draggingTool = null;
   }
-  
+
   if (draggingField) {
     const f = draggingField.f;
     draggingField.box.classList.remove("dragging");
@@ -463,10 +517,10 @@ function onPointerUp(e) {
     draggingField.box.style.left = (f.rect.x * 100) + '%';
     draggingField.box.style.top = (f.rect.y * 100) + '%';
     draggingField.box.style.transform = '';
-    
+
     draggingField = null;
     renderPropertiesPanel(); // update x/y in props
-    
+
     // Auto-open settings panel on mobile/tablet when drag is finished
     const rightSidebar = document.getElementById("properties-panel");
     const backdrop = document.getElementById("sidebar-backdrop");
@@ -479,7 +533,7 @@ function onPointerUp(e) {
 
 function selectField(f, openPanelOnMobile = true) {
   selectedField = f;
-  
+
   // Update active selected class in-place for 60fps performance without DOM destruction
   document.querySelectorAll(".field-box").forEach(el => {
     el.classList.remove("selected");
@@ -510,7 +564,7 @@ function selectField(f, openPanelOnMobile = true) {
 function renderPropertiesPanel() {
   const panel = document.getElementById("properties-panel");
   if (!panel) return;
-  
+
   if (!selectedField) {
     panel.innerHTML = '<div class="empty-props">Select a field to view properties</div>';
     return;
@@ -579,7 +633,7 @@ async function renderPdf() {
     wrap.style.width = viewport.width + "px";
     wrap.style.height = viewport.height + "px";
     wrap.style.marginBottom = "2rem";
-    
+
     const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -603,7 +657,7 @@ function renderFieldOverlays(wrap, pageIndex) {
   wrap.querySelectorAll(".field-box").forEach(function (el) {
     el.remove();
   });
-  
+
   placed
     .filter(function (f) {
       return f.pageIndex === pageIndex;
@@ -613,17 +667,17 @@ function renderFieldOverlays(wrap, pageIndex) {
         return x.id === f.recipientId;
       });
       const box = document.createElement("div");
-      
+
       let cls = "field-box " + colorClass(f.recipientId);
       if (selectedField === f) cls += " selected";
-      
+
       box.className = cls;
       box.dataset.id = f.id;
       box.style.left = f.rect.x * 100 + "%";
       box.style.top = f.rect.y * 100 + "%";
       box.style.width = f.rect.width * 100 + "%";
       box.style.height = f.rect.height * 100 + "%";
-      
+
       const recipientName = r ? recipientLabel(r) : 'Unassigned';
       const typeIcons = {
         signature: '✍️',
@@ -633,24 +687,24 @@ function renderFieldOverlays(wrap, pageIndex) {
       };
       const icon = typeIcons[f.type] || '⚙️';
       const formattedType = f.type === 'text' ? 'Textbox' : (f.type.charAt(0).toUpperCase() + f.type.slice(1));
-      
-      box.innerHTML = 
+
+      box.innerHTML =
         '<div class="field-recipient-tag">' + esc(recipientName) + '</div>' +
         '<div class="field-content">' +
-          '<span class="field-icon">' + icon + '</span>' +
-          '<span class="field-label-text">' + esc(formattedType) + '</span>' +
+        '<span class="field-icon">' + icon + '</span>' +
+        '<span class="field-label-text">' + esc(formattedType) + '</span>' +
         '</div>' +
         '<div class="resize-handle"></div>';
-      
+
       box.onpointerdown = function (ev) {
         if (ev.button !== 0) return;
         ev.stopPropagation();
-        
+
         // Select visually without triggering settings drawer slide-in on mobile/tablet immediately
         selectField(f, false);
         box.classList.add("dragging");
         box.style.transform = 'scale(0.98)';
-        
+
         // Start dragging with cached parent dimensions for maximum smoothness (60fps)
         draggingField = { f: f, box: box, wrap: wrap, wrapRect: wrap.getBoundingClientRect() };
         pointerStartX = ev.clientX;
@@ -658,7 +712,7 @@ function renderFieldOverlays(wrap, pageIndex) {
         fieldStartX = f.rect.x;
         fieldStartY = f.rect.y;
       };
-      
+
       wrap.appendChild(box);
     });
 }
@@ -706,7 +760,7 @@ async function finishRequest() {
     const finishBtn = document.getElementById("finish");
     finishBtn.disabled = true;
     finishBtn.textContent = "Sending...";
-    
+
     await saveFields();
     const res = await fetch("/embed/api/request/finish", {
       method: "POST",
@@ -715,7 +769,7 @@ async function finishRequest() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Could not send");
-    
+
     const links = (data.signingSessions || [])
       .map(function (s) {
         return (
@@ -727,14 +781,15 @@ async function finishRequest() {
         );
       })
       .join("");
-      
+
     const step2Body = document.querySelector(".step2-body");
-    step2Body.innerHTML = 
-      '<div style="padding: 3rem; margin: 0 auto; width: 100%; max-width: 600px;">' +
+    step2Body.innerHTML =
+      '<div style="padding: 3rem; margin: 0 auto; width: 100%; max-width: 600px;">'
+      +
       '<div class="done"><p><strong>Ready for signing.</strong> Share these links:</p><ul>' +
       links +
       "</ul></div></div>";
-      
+
     if (window.parent !== window) {
       window.parent.postMessage(
         { type: "esign.request.completed", envelopeId: data.envelopeId },
@@ -744,7 +799,7 @@ async function finishRequest() {
   } catch (e) {
     alert(e.message);
     const finishBtn = document.getElementById("finish");
-    if(finishBtn) {
+    if (finishBtn) {
       finishBtn.disabled = false;
       finishBtn.textContent = "Send";
     }

@@ -252,7 +252,9 @@ hostedEmbedRouter.post("/api/request/upload", upload.array("Files", 20), async (
     for (const f of files) fs.rmSync(f.path, { force: true });
   }
 
-  const originalName = files.length === 1 ? files[0].originalname : "document.pdf";
+  const originalName = files.length === 1
+    ? files[0].originalname
+    : JSON.stringify(files.map((f) => f.originalname));
 
   // Create the document
   const doc = await prisma.document.create({
@@ -266,11 +268,16 @@ hostedEmbedRouter.post("/api/request/upload", upload.array("Files", 20), async (
     },
   });
 
-  // Attach to envelope
-  await prisma.envelope.update({
-    where: { id: session.envelopeId },
-    data: { documentId: doc.id },
-  });
+  // Attach to envelope and delete existing fields
+  await prisma.$transaction([
+    prisma.envelope.update({
+      where: { id: session.envelopeId },
+      data: { documentId: doc.id },
+    }),
+    prisma.envelopeField.deleteMany({
+      where: { envelopeId: session.envelopeId },
+    }),
+  ]);
 
   res.json({ ok: true, document: { id: doc.id, originalName: doc.originalName } });
 });
