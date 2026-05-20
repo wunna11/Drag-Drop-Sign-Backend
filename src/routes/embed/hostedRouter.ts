@@ -304,23 +304,55 @@ hostedEmbedRouter.put("/api/request/recipients", async (req, res) => {
     return;
   }
 
-  // To keep it simple, we delete old recipients and insert new ones
-  // Note: if fields are tied to recipientId, deleting recipients will cascade delete fields.
-  // Assuming in Step 1, fields haven't been placed yet.
-  await prisma.recipient.deleteMany({
-    where: { envelopeId: session.envelopeId },
-  });
+  const newRecipients = await prisma.$transaction(async (tx) => {
+    // Fetch existing recipients
+    const existingRecipients = await tx.recipient.findMany({
+      where: { envelopeId: session.envelopeId },
+    });
 
-  const newRecipients = await Promise.all(recipients.map((r, i) =>
-    prisma.recipient.create({
-      data: {
-        envelopeId: session.envelopeId,
-        email: r.email,
-        name: r.name ?? null,
-        routingOrder: r.routingOrder ?? i + 1,
-      },
-    })
-  ));
+    const existingMap = new Map(existingRecipients.map((r) => [r.id, r]));
+    const incomingIds = new Set(
+      recipients
+        .map((r) => r.id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+    );
+
+    // Delete recipients that are not in the incoming list
+    const idsToDelete = existingRecipients
+      .map((r) => r.id)
+      .filter((id) => !incomingIds.has(id));
+
+    if (idsToDelete.length > 0) {
+      await tx.recipient.deleteMany({
+        where: { id: { in: idsToDelete } },
+      });
+    }
+
+    // Upsert recipients
+    return Promise.all(
+      recipients.map((r, i) => {
+        if (r.id && existingMap.has(r.id)) {
+          return tx.recipient.update({
+            where: { id: r.id },
+            data: {
+              email: r.email,
+              name: r.name ?? null,
+              routingOrder: r.routingOrder ?? i + 1,
+            },
+          });
+        } else {
+          return tx.recipient.create({
+            data: {
+              envelopeId: session.envelopeId,
+              email: r.email,
+              name: r.name ?? null,
+              routingOrder: r.routingOrder ?? i + 1,
+            },
+          });
+        }
+      })
+    );
+  });
 
   res.json({ ok: true, recipients: newRecipients });
 });

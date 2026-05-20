@@ -17,10 +17,12 @@ let drawingCtx = null;
 let isDrawing = false;
 
 const typedStyles = [
-  { font: '"Brush Script MT", "Segoe Script", cursive', slant: "-6deg" },
-  { font: '"Snell Roundhand", "Apple Chancery", cursive', slant: "0deg" },
-  { font: '"Lucida Handwriting", "Segoe Script", cursive', slant: "-3deg" },
-  { font: '"Pacifico", "Brush Script MT", cursive', slant: "0deg" },
+  { font: "'Great Vibes', cursive", slant: "0deg" },
+  { font: "'Caveat', cursive", slant: "-2deg" },
+  { font: "'Dancing Script', cursive", slant: "-2deg" },
+  { font: "'Pacifico', cursive", slant: "0deg" },
+  { font: "'Mrs Saint Delafield', cursive", slant: "-1deg" },
+  { font: "'Alex Brush', cursive", slant: "-2deg" }
 ];
 
 function esc(s) {
@@ -223,12 +225,10 @@ function renderTypedChoices() {
         (i === selectedTypedIndex ? " selected" : "") +
         '" data-typed-index="' +
         i +
-        '" style="font-family:' +
-        style.font +
-        '; transform: rotate(' +
-        style.slant +
-        ');">' +
+        '">' +
+        '<span style="font-family:' + style.font + '; transform: rotate(' + style.slant + '); display: inline-block;">' +
         esc(name) +
+        "</span>" +
         "</button>"
       );
     })

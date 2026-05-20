@@ -358,6 +358,16 @@ function renderStep2() {
       ghostEl.innerHTML = btn.innerHTML;
       document.body.appendChild(ghostEl);
       updateGhostPosition(e.clientX, e.clientY);
+
+      // Close drawers on mobile/tablet so the canvas is fully visible and accessible for dropping!
+      const leftSidebar = document.getElementById("sidebar-left");
+      const rightSidebar = document.getElementById("properties-panel");
+      const backdrop = document.getElementById("sidebar-backdrop");
+      if (window.innerWidth < 1024) {
+        if (leftSidebar) leftSidebar.classList.remove("open");
+        if (rightSidebar) rightSidebar.classList.remove("open");
+        if (backdrop) backdrop.classList.remove("open");
+      }
     };
   });
 
@@ -380,7 +390,7 @@ function onPointerMove(e) {
     updateGhostPosition(e.clientX, e.clientY);
   } else if (draggingField) {
     const wrap = draggingField.wrap;
-    const rect = wrap.getBoundingClientRect();
+    const rect = draggingField.wrapRect || wrap.getBoundingClientRect();
     const dx = e.clientX - pointerStartX;
     const dy = e.clientY - pointerStartY;
     
@@ -393,8 +403,10 @@ function onPointerMove(e) {
     draggingField.f.rect.x = nx;
     draggingField.f.rect.y = ny;
     
-    draggingField.box.style.left = (nx * 100) + '%';
-    draggingField.box.style.top = (ny * 100) + '%';
+    // Smooth transform-based repositioning during drag (hardware accelerated, no layout reflows)
+    const clampedDx = (nx - fieldStartX) * rect.width;
+    const clampedDy = (ny - fieldStartY) * rect.height;
+    draggingField.box.style.transform = 'translate3d(' + clampedDx + 'px, ' + clampedDy + 'px, 0) scale(0.98)';
   }
 }
 
@@ -435,6 +447,7 @@ function onPointerUp(e) {
         label: recipientLabel(r) + " " + draggingTool,
       };
       placed.push(newField);
+      renderAllPages();
       selectField(newField);
     }
     
@@ -444,24 +457,50 @@ function onPointerUp(e) {
   }
   
   if (draggingField) {
+    const f = draggingField.f;
+    draggingField.box.classList.remove("dragging");
+    // Apply final percentage left and top values to style and clear transform
+    draggingField.box.style.left = (f.rect.x * 100) + '%';
+    draggingField.box.style.top = (f.rect.y * 100) + '%';
+    draggingField.box.style.transform = '';
+    
     draggingField = null;
     renderPropertiesPanel(); // update x/y in props
+    
+    // Auto-open settings panel on mobile/tablet when drag is finished
+    const rightSidebar = document.getElementById("properties-panel");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    if (rightSidebar && window.innerWidth < 1024) {
+      rightSidebar.classList.add("open");
+      if (backdrop) backdrop.classList.add("open");
+    }
   }
 }
 
-function selectField(f) {
+function selectField(f, openPanelOnMobile = true) {
   selectedField = f;
-  renderAllPages();
+  
+  // Update active selected class in-place for 60fps performance without DOM destruction
+  document.querySelectorAll(".field-box").forEach(el => {
+    el.classList.remove("selected");
+  });
+  if (f) {
+    const selectedEl = document.querySelector('.field-box[data-id="' + f.id + '"]');
+    if (selectedEl) {
+      selectedEl.classList.add("selected");
+    }
+  }
+
   renderPropertiesPanel();
 
   // Auto-open settings panel on mobile/tablet if a field is selected
   const rightSidebar = document.getElementById("properties-panel");
   const backdrop = document.getElementById("sidebar-backdrop");
   if (rightSidebar && window.innerWidth < 1024) {
-    if (f) {
+    if (f && openPanelOnMobile) {
       rightSidebar.classList.add("open");
       if (backdrop) backdrop.classList.add("open");
-    } else {
+    } else if (!f) {
       rightSidebar.classList.remove("open");
       if (backdrop) backdrop.classList.remove("open");
     }
@@ -579,20 +618,41 @@ function renderFieldOverlays(wrap, pageIndex) {
       if (selectedField === f) cls += " selected";
       
       box.className = cls;
+      box.dataset.id = f.id;
       box.style.left = f.rect.x * 100 + "%";
       box.style.top = f.rect.y * 100 + "%";
       box.style.width = f.rect.width * 100 + "%";
       box.style.height = f.rect.height * 100 + "%";
       
-      box.innerHTML = '<span>' + esc(f.type) + '</span><div class="resize-handle"></div>';
+      const recipientName = r ? recipientLabel(r) : 'Unassigned';
+      const typeIcons = {
+        signature: '✍️',
+        initials: '🔤',
+        text: '📝',
+        date: '📅'
+      };
+      const icon = typeIcons[f.type] || '⚙️';
+      const formattedType = f.type === 'text' ? 'Textbox' : (f.type.charAt(0).toUpperCase() + f.type.slice(1));
+      
+      box.innerHTML = 
+        '<div class="field-recipient-tag">' + esc(recipientName) + '</div>' +
+        '<div class="field-content">' +
+          '<span class="field-icon">' + icon + '</span>' +
+          '<span class="field-label-text">' + esc(formattedType) + '</span>' +
+        '</div>' +
+        '<div class="resize-handle"></div>';
       
       box.onpointerdown = function (ev) {
         if (ev.button !== 0) return;
         ev.stopPropagation();
-        selectField(f);
         
-        // Start dragging
-        draggingField = { f: f, box: box, wrap: wrap };
+        // Select visually without triggering settings drawer slide-in on mobile/tablet immediately
+        selectField(f, false);
+        box.classList.add("dragging");
+        box.style.transform = 'scale(0.98)';
+        
+        // Start dragging with cached parent dimensions for maximum smoothness (60fps)
+        draggingField = { f: f, box: box, wrap: wrap, wrapRect: wrap.getBoundingClientRect() };
         pointerStartX = ev.clientX;
         pointerStartY = ev.clientY;
         fieldStartX = f.rect.x;

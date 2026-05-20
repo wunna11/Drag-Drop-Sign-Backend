@@ -119,27 +119,31 @@ h1 {
 }
 
 .colors-0 {
-  border-color: #2563eb;
-  background: rgba(37, 99, 235, .12);
-  color: #1d4ed8;
+  --theme-color: #2563eb;
+  border-color: var(--theme-color);
+  background: rgba(37, 99, 235, 0.06);
+  color: var(--theme-color);
 }
 
 .colors-1 {
-  border-color: #059669;
-  background: rgba(5, 150, 105, .12);
-  color: #047857;
+  --theme-color: #10b981;
+  border-color: var(--theme-color);
+  background: rgba(16, 185, 129, 0.06);
+  color: var(--theme-color);
 }
 
 .colors-2 {
-  border-color: #d97706;
-  background: rgba(217, 119, 6, .12);
-  color: #b45309;
+  --theme-color: #f59e0b;
+  border-color: var(--theme-color);
+  background: rgba(245, 158, 11, 0.06);
+  color: var(--theme-color);
 }
 
 .colors-3 {
-  border-color: #7c3aed;
-  background: rgba(124, 58, 237, .12);
-  color: #6d28d9;
+  --theme-color: #8b5cf6;
+  border-color: var(--theme-color);
+  background: rgba(139, 92, 246, 0.06);
+  color: var(--theme-color);
 }
 
 /* Step 1 Styles */
@@ -400,42 +404,94 @@ h1 {
 
 .field-box {
   position: absolute;
-  border: 2px solid transparent;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 2px;
-  font-size: 12px;
-  padding: 4px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: grab;
   user-select: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
-  overflow: hidden;
-  white-space: nowrap;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: visible;
 }
 
-.field-box:active {
+.field-box:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.field-box:active,
+.field-box.dragging {
   cursor: grabbing;
+  transition: none !important;
 }
 
 .field-box.selected {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  border-width: 2px !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(59, 130, 246, 0.15) !important;
   z-index: 10;
 }
 
-/* A small dot in bottom right for resize - optional if we add resizing later */
+/* Recipient initials tag badge floating elegantly on the top-left */
+.field-recipient-tag {
+  position: absolute;
+  top: -9px;
+  left: 8px;
+  background: var(--theme-color, #2563eb);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  letter-spacing: 0.5px;
+}
+
+.field-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.field-icon {
+  font-size: 14px;
+}
+
+.field-label-text {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+/* Beautiful Resize Handle */
 .resize-handle {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 8px;
-  height: 8px;
-  background: #3b82f6;
+  right: -3px;
+  bottom: -3px;
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
   cursor: se-resize;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   display: none;
+  transition: transform 0.15s ease;
+}
+
+.resize-handle:hover {
+  transform: scale(1.2);
 }
 
 .field-box.selected .resize-handle {
