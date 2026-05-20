@@ -443,24 +443,10 @@ function onPointerMove(e) {
   if (draggingTool) {
     updateGhostPosition(e.clientX, e.clientY);
   } else if (draggingField) {
-    const wrap = draggingField.wrap;
-    const rect = draggingField.wrapRect || wrap.getBoundingClientRect();
+    // Allow the ghost to move freely across the screen during cross-page drag
     const dx = e.clientX - pointerStartX;
     const dy = e.clientY - pointerStartY;
-
-    let nx = fieldStartX + (dx / rect.width);
-    let ny = fieldStartY + (dy / rect.height);
-
-    nx = Math.max(0, Math.min(1 - DEFAULT_W, nx));
-    ny = Math.max(0, Math.min(1 - DEFAULT_H, ny));
-
-    draggingField.f.rect.x = nx;
-    draggingField.f.rect.y = ny;
-
-    // Smooth transform-based repositioning during drag (hardware accelerated, no layout reflows)
-    const clampedDx = (nx - fieldStartX) * rect.width;
-    const clampedDy = (ny - fieldStartY) * rect.height;
-    draggingField.box.style.transform = 'translate3d(' + clampedDx + 'px, ' + clampedDy + 'px, 0) scale(0.98)';
+    draggingField.box.style.transform = 'translate3d(' + dx + 'px, ' + dy + 'px, 0) scale(0.98)';
   }
 }
 
@@ -513,13 +499,41 @@ function onPointerUp(e) {
   if (draggingField) {
     const f = draggingField.f;
     draggingField.box.classList.remove("dragging");
-    // Apply final percentage left and top values to style and clear transform
+
+    // Detect which page the pointer was dropped on (supports cross-page drags)
+    const pages = document.querySelectorAll('.page-wrap');
+    let targetPage = null;
+    let targetRect = null;
+    for (const page of pages) {
+      const rect = page.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right &&
+        e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        targetPage = page;
+        targetRect = rect;
+        break;
+      }
+    }
+
+    if (targetPage) {
+      const newPageIndex = parseInt(targetPage.dataset.page);
+      // Update position relative to the target page (handles same-page and cross-page)
+      f.pageIndex = newPageIndex;
+      f.rect.x = Math.max(0, Math.min(1 - f.rect.width, (e.clientX - targetRect.left) / targetRect.width - f.rect.width / 2));
+      f.rect.y = Math.max(0, Math.min(1 - f.rect.height, (e.clientY - targetRect.top) / targetRect.height - f.rect.height / 2));
+      draggingField = null;
+      renderAllPages();
+      selectField(f);
+      renderPropertiesPanel();
+      return;
+    }
+
+    // Dropped outside all pages — restore original position
     draggingField.box.style.left = (f.rect.x * 100) + '%';
     draggingField.box.style.top = (f.rect.y * 100) + '%';
     draggingField.box.style.transform = '';
 
     draggingField = null;
-    renderPropertiesPanel(); // update x/y in props
+    renderPropertiesPanel();
 
     // Auto-open settings panel on mobile/tablet when drag is finished
     const rightSidebar = document.getElementById("properties-panel");
