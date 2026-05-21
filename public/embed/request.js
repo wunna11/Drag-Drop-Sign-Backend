@@ -111,6 +111,12 @@ function setupStep1Events() {
     for (let i = 0; i < fileInput.files.length; i++) {
       pendingFiles.push(fileInput.files[i]);
     }
+    console.log("Selected files:", pendingFiles.length);
+
+    window.parent.postMessage({
+      type: 'IFRAME_FILE_COUNT',
+      count: pendingFiles.length
+    }, '*');
 
     // Clear the input so the same files can be selected again if needed
     fileInput.value = "";
@@ -152,6 +158,11 @@ function setupStep1Events() {
         localDocument = uploadData.document;
         // clear pending after successful upload
         pendingFiles = [];
+        // Notify parent frame (e.g. ProcessMaker) that a file has been uploaded
+        if (window.parent !== window) {
+          console.log('not windown parent'); ``
+          window.parent.postMessage({ type: "esign.document.uploaded", documentId: localDocument.id }, "*");
+        }
       }
 
       nextBtn.textContent = "Saving recipients...";
@@ -179,6 +190,10 @@ function setupStep1Events() {
   };
 }
 
+let html = "";
+let fileCount = 0;
+
+
 function renderFileList() {
   const list = document.getElementById("file-list");
   if (!list) return;
@@ -187,7 +202,6 @@ function renderFileList() {
     return;
   }
 
-  let html = "";
 
   if (pendingFiles.length > 0) {
     html = pendingFiles.map((file, i) => `
@@ -214,6 +228,7 @@ function renderFileList() {
     } catch (e) {
       fileNames = [localDocument.originalName];
     }
+    fileCount = fileNames.length;
     html = fileNames.map((name, idx) => `
       <div class="file-item" style="margin-bottom: 0.5rem;">
         <div>
@@ -781,8 +796,36 @@ async function finishRequest() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token }),
     });
+
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Could not send");
+
+    if (!res.ok) {
+      const isIframe = window.self !== window.top;
+      finishBtn.disabled = false;
+      finishBtn.textContent = "Send";
+      if (isIframe) {
+        console.log('no sign');
+        const res = window.parent.postMessage({
+          type: 'IFRAME_HAS_SIGN',
+          message: data.error.message || "Could not send" // Passes the actual error coming from your backend server
+        }, '*');
+        console.log('res', res);
+        return;
+      } else { 
+       throw new Error(data.error || "Could not send");
+      }
+    }
+
+    //const isIframe = window.self !== window.top;
+    //if (isIframe) {
+    //  window.parent.postMessage({
+    //    type: 'IFRAME_HAS_SIGN',
+    //    message: errorMessage // Passes the actual error coming from your backend server
+    //  }, '*');
+    //} else {
+    //  throw new Error(errorMessage);
+    //}
+    // }
 
     const links = (data.signingSessions || [])
       .map(function (s) {
@@ -805,10 +848,13 @@ async function finishRequest() {
       "</ul></div></div>";
 
     if (window.parent !== window) {
+      console.log('not window');
       window.parent.postMessage(
         { type: "esign.request.completed", envelopeId: data.envelopeId },
         "*"
       );
+    } else {
+      console.log('window');
     }
   } catch (e) {
     alert(e.message);
@@ -819,6 +865,7 @@ async function finishRequest() {
     }
   }
 }
+
 
 async function main() {
   if (!token) {
