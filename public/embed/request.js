@@ -788,7 +788,7 @@ async function finishRequest() {
   try {
     const finishBtn = document.getElementById("finish");
     finishBtn.disabled = true;
-    finishBtn.textContent = "Sending...";
+    finishBtn.textContent = "Sent";
 
     await saveFields();
     const res = await fetch("/embed/api/request/finish", {
@@ -811,41 +811,35 @@ async function finishRequest() {
         }, '*');
         console.log('res', res);
         return;
-      } else { 
-       throw new Error(data.error || "Could not send");
+      } else {
+        throw new Error(data.error || "Could not send");
       }
     }
 
-    //const isIframe = window.self !== window.top;
-    //if (isIframe) {
-    //  window.parent.postMessage({
-    //    type: 'IFRAME_HAS_SIGN',
-    //    message: errorMessage // Passes the actual error coming from your backend server
-    //  }, '*');
-    //} else {
-    //  throw new Error(errorMessage);
-    //}
-    // }
-
-    const links = (data.signingSessions || [])
-      .map(function (s) {
-        return (
-          "<li><strong>" +
-          esc(s.recipientName || s.recipientEmail) +
-          '</strong>: <a href="' +
-          esc(s.embedUrl) +
-          '" target="_blank" rel="noopener">Open signing link</a></li>'
-        );
-      })
-      .join("");
+    //const links = (data.signingSessions || [])
+    //  .map(function (s) {
+    //    return (
+    //      "<li><strong>" +
+    //      esc(s.recipientName || s.recipientEmail) +
+    //      '</strong>: <a href="' +
+    //      esc(s.embedUrl) +
+    //      '" target="_blank" rel="noopener">Open signing link</a></li>'
+    //    );
+    //  })
+    //  .join("");
 
     const step2Body = document.querySelector(".step2-body");
-    step2Body.innerHTML =
-      '<div style="padding: 3rem; margin: 0 auto; width: 100%; max-width: 600px;">'
-      +
-      '<div class="done"><p><strong>Ready for signing.</strong> Share these links:</p><ul>' +
-      links +
-      "</ul></div></div>";
+    step2Body.innerHTML = `
+      <div style="padding: 3rem; margin: 0 auto; width: 100%; max-width: 600px; font-family: sans-serif;">
+        <div class="done" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3rem 2rem; border-radius: 8px; text-align: center;">
+          
+          <p style="margin: 0; color: #166534; font-size: 1.25rem; font-weight: bold;">
+            Success! Signatures have been placed successfully.
+          </p>
+
+        </div>
+      </div>
+    `;
 
     if (window.parent !== window) {
       console.log('not window');

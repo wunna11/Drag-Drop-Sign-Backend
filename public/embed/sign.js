@@ -55,7 +55,10 @@ function addOverlay(wrap, f, editable) {
   overlay.style.top = f.rect.y * 100 + "%";
   overlay.style.width = f.rect.width * 100 + "%";
   overlay.style.height = f.rect.height * 100 + "%";
-  const label = f.label || f.type;
+  let label = f.label || f.type;
+  if (f.type === "signature" && signerName) {
+    label = signerName + " signature"; 
+  }
 
   if (editable && f.type === "signature") {
     overlay.innerHTML =
@@ -523,12 +526,12 @@ async function load() {
       return;
     }
     var doneHtml = '<div class="done"><p>Signing complete.</p>';
-    if (out.status === "COMPLETED" && out.embedDownloadUrl) {
-      doneHtml +=
-        '<p><a href="' +
-        esc(out.embedDownloadUrl) +
-        '" download>Download signed PDF</a></p>';
-    }
+    //if (out.status === "COMPLETED" && out.embedDownloadUrl) {
+    //  doneHtml +=
+    //    '<p><a href="' +
+    //    esc(out.embedDownloadUrl) +
+    //    '" download>Download signed PDF</a></p>';
+    //}
     doneHtml += '<p class="muted">You can close this window.</p></div>';
     app.innerHTML = doneHtml;
     if (window.parent !== window) {
